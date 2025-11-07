@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator</title>
+    <script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4a6cf7;
+            --primary-dark: #3a5ce5;
+            --secondary: #6c757d;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --border: #dee2e6;
+            --shadow: rgba(72, 35, 89, 0.376);
+            --bg-color: #f5f7fb;
+            --card-bg: #ffffff;
+            --text-color: #343a40;
+            --input-bg: #ffffff;
+        }
+
+        .dark-mode {
+            --primary: #6d8cff;
+            --primary-dark: #5a7cff;
+            --secondary: #a0aec0;
+            --light: #2d3748;
+            --dark: #e2e8f0;
+            --border: #4a5568;
+            --shadow: rgba(0, 0, 0, 0.3);
+            --bg-color: #1a202c;
+            --card-bg: #2d3748;
+            --text-color: #e2e8f0;
+            --input-bg: #4a5568;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            flex: 1;
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 5px 12px var(--shadow);
+        }
+        
+        h1 {
+            color: var(--primary);
+            font-size: clamp(1.8rem, 4vw, 2.5rem);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .theme-toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .theme-label {
+            font-size: 0.9rem;
+            color: var(--secondary);
+        }
+        
+        .theme-toggle {
+            background: var(--light);
+            border: none;
+            width: 64px;
+            height: 32px;
+            border-radius: 16px;
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            padding: 0 5px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .theme-toggle::before {
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: white;
+            top: 4px;
+            left: 4px;
+            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            z-index: 2;
+        }
+        
+        .theme-toggle i {
+            font-size: 14px;
+            z-index: 1;
+            transition: opacity 0.3s;
+        }
+        
+        .theme-toggle .fa-sun {
+            color: #f6e05e;
+            margin-right: auto;
+        }
+        
+        .theme-toggle .fa-moon {
+            color: #a0aec0;
+            margin-left: auto;
+        }
+        
+        .dark-mode .theme-toggle::before {
+            transform: translateX(32px);
+            background: #4a5568;
+        }
+        
+        .dark-mode .theme-toggle .fa-sun {
+            opacity: 0.5;
+        }
+        
+        .dark-mode .theme-toggle .fa-moon {
+            opacity: 1;
+        }
+        
+        .light-mode .theme-toggle .fa-sun {
+            opacity: 1;
+        }
+        
+        .light-mode .theme-toggle .fa-moon {
+            opacity: 0.5;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+        
+        .input-panel, .preview-panel {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: clamp(15px, 3vw, 25px);
+            box-shadow: 0 4px 12px var(--shadow);
+            display: flex;
+            flex-direction: column;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .panel-title {
+            font-size: clamp(1.1rem, 2.5vw, 1.3rem);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: clamp(0.9rem, 2vw, 1rem);
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            background: var(--input-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: clamp(0.9rem, 2vw, 1rem);
+            transition: border 0.3s;
+        }
+        
+        input:focus, select:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(74, 108, 247, 0.2);
+        }
+        
+        .color-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            flex-shrink: 0;
+            transition: transform 0.2s;
+        }
+        
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+        
+        .color-option.active {
+            border-color: var(--dark);
+            transform: scale(1.1);
+        }
+        
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 10px;
+        }
+        
+        @media (max-width: 480px) {
+            .template-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .template {
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .template:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+        
+        .template.active {
+            border-color: var(--primary);
+            background: rgba(74, 108, 247, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .template-icon {
+            font-size: clamp(1.5rem, 3vw, 1.8rem);
+            margin-bottom: 8px;
+        }
+        
+        .template-name {
+            font-size: clamp(0.8rem, 2vw, 0.9rem);
+        }
+        
+        .preview-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            border: 1px dashed var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            min-height: 250px;
+            position: relative;
+            overflow: hidden;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        
+        .preview-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(74, 108, 247, 0.1) 0%, rgba(74, 108, 247, 0.05) 100%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .preview-container:hover::before {
+            opacity: 1;
+        }
+        
+        #qr-code {
+            width: 100%;
+            max-width: 250px;
+            height: auto;
+            aspect-ratio: 1 / 1;
+            transition: transform 0.3s;
+            z-index: 1;
+        }
+        
+        #qr-code:hover {
+            transform: scale(1.02);
+        }
+        
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: clamp(0.8rem, 2vw, 0.9rem);
+            flex: 1;
+            justify-content: center;
+            min-width: 120px;
+            background: var(--primary);
+            color: white;
+        }
+        
+        button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px var(--shadow);
+        }
+        
+        .btn-secondary {
+            background: var(--light);
+            color: var(--text-color);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+        
+        .file-upload-container {
+            position: relative;
+            margin-top: 20px;
+        }
+        
+        .file-upload-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            padding: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        
+        .file-upload-label:hover {
+            border-color: var(--primary);
+            background: rgba(74, 108, 247, 0.05);
+        }
+        
+        .file-upload-label i {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        
+        .file-upload-label span {
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        .file-upload-label p {
+            font-size: 0.9rem;
+            color: var(--secondary);
+            margin-top: 5px;
+        }
+        
+        #logo-upload, #bg-upload {
+            position: absolute;
+            width: 0.1px;
+            height: 0.1px;
+            opacity: 0;
+            overflow: hidden;
+            z-index: -1;
+        }
+        
+        .mascot {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 12px var(--shadow);
+            cursor: pointer;
+            transition: transform 0.3s;
+            z-index: 100;
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .mascot:hover {
+            transform: scale(1.1) rotate(5deg);
+            animation: none;
+        }
+        
+        .error-message {
+            color: #e53e3e;
+            font-size: clamp(0.8rem, 1.8vw, 0.9rem);
+            margin-top: 5px;
+            display: none;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 30px;
+            color: var(--secondary);
+            font-size: clamp(0.8rem, 1.8vw, 0.9rem);
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+        
+        .api-credit {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+        
+        .api-credit a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+        
+        .api-credit a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Loading animation */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 10px;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: var(--primary);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--card-bg);
+            color: var(--text-color);
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .toast.show {
+            opacity: 1;
+        }
+        
+        .bg-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .bg-option {
+            height: 60px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid var(--border);
+            transition: all 0.3s;
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .bg-option:hover {
+            transform: scale(1.05);
+        }
+        
+        .bg-option.active {
+            border-color: var(--primary);
+            transform: scale(1.05);
+        }
+        
+        .bg-option:nth-child(1) {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .bg-option:nth-child(2) {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .bg-option:nth-child(3) {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .bg-option:nth-child(4) {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+        
+        .bg-option:nth-child(5) {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+        
+        .bg-option:nth-child(6) {
+            background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+            
+            header {
+                padding: 15px;
+            }
+            
+            .mascot {
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
+                bottom: 10px;
+                right: 10px;
+            }
+            
+            button {
+                min-width: 100px;
+                padding: 10px 15px;
+            }
+            
+            .bg-options {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body class="light-mode">
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-qrcode"></i> QR Code Maker</h1>
+            <div class="theme-toggle-container">
+                <span class="theme-label">Light</span>
+                <button class="theme-toggle" id="theme-toggle">
+                    <i class="fas fa-sun"></i>
+                    <i class="fas fa-moon"></i>
+                </button>
+                <span class="theme-label">Dark</span>
+            </div>
+        </header>
+        
+        <div class="main-content">
+            <div class="input-panel">
+                <h2 class="panel-title"><i class="fas fa-cogs"></i> Create QR Code</h2>
+                
+                <div class="form-group">
+                    <label for="qr-content">Enter URL or Text</label>
+                    <input type="text" id="qr-content" placeholder="https://example.com">
+                    <div class="error-message" id="content-error">Please enter a valid URL or text</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="dot-style">Style</label>
+                    <select id="dot-style">
+                        <option value="square">Square</option>
+                        <option value="rounded">Rounded</option>
+                        <option value="dots">Dots</option>
+                        <option value="classy">Classy</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Color</label>
+                    <div class="color-options">
+                        <div class="color-option active" style="background-color: #000000;" data-color="#000000"></div>
+                        <div class="color-option" style="background-color: #4a6cf7;" data-color="#4a6cf7"></div>
+                        <div class="color-option" style="background-color: #28a745;" data-color="#28a745"></div>
+                        <div class="color-option" style="background-color: #dc3545;" data-color="#dc3545"></div>
+                        <div class="color-option" style="background-color: #ffc107;" data-color="#ffc107"></div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Background</label>
+                    <div class="bg-options">
+                        <div class="bg-option active" data-bg="gradient-1"></div>
+                        <div class="bg-option" data-bg="gradient-2"></div>
+                        <div class="bg-option" data-bg="gradient-3"></div>
+                        <div class="bg-option" data-bg="gradient-4"></div>
+                        <div class="bg-option" data-bg="gradient-5"></div>
+                        <div class="bg-option" data-bg="gradient-6"></div>
+                    </div>
+                    
+                    <div class="file-upload-container" style="margin-top: 15px;">
+                        <label for="bg-upload" class="file-upload-label">
+                            <i class="fas fa-image"></i>
+                            <span>Custom Background</span>
+                            <p>Click to upload your own background</p>
+                        </label>
+                        <input type="file" id="bg-upload" accept="image/*">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Templates</label>
+                    <div class="template-grid">
+                        <div class="template active" data-template="minimal">
+                            <div class="template-icon"><i class="fas fa-mobile-alt"></i></div>
+                            <div class="template-name">Minimal</div>
+                        </div>
+                        <div class="template" data-template="gradient">
+                            <div class="template-icon"><i class="fas fa-palette"></i></div>
+                            <div class="template-name">Colorful</div>
+                        </div>
+                        <div class="template" data-template="logo">
+                            <div class="template-icon"><i class="fas fa-building"></i></div>
+                            <div class="template-name">Logo</div>
+                        </div>
+                        <div class="template" data-template="creative">
+                            <div class="template-icon"><i class="fas fa-paint-brush"></i></div>
+                            <div class="template-name">Creative</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="preview-panel">
+                <h2 class="panel-title"><i class="fas fa-eye"></i> Preview</h2>
+                
+                <div class="preview-container" id="preview-container">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Generating QR Code...</p>
+                    </div>
+                    <div id="qr-code"></div>
+                </div>
+                
+                <div class="actions">
+                    <button class="btn-primary" id="download-png">
+                        <i class="fas fa-download"></i>
+                        <span>PNG</span>
+                    </button>
+                    <button class="btn-secondary" id="download-svg">
+                        <i class="fas fa-download"></i>
+                        <span>SVG</span>
+                    </button>
+                    <button class="btn-secondary" id="share-link">
+                        <i class="fas fa-share-alt"></i>
+                        <span>Share</span>
+                    </button>
+                </div>
+                
+                <div class="file-upload-container">
+                    <label for="logo-upload" class="file-upload-label">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <span>Add Logo to QR Code</span>
+                        <p>Click to upload or drag & drop</p>
+                        <p>PNG, JPG up to 5MB</p>
+                    </label>
+                    <input type="file" id="logo-upload" accept="image/*">
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>QR Code Generator</p>
+            <div class="api-credit">
+                Powered by <a href="https://github.com/kozakdenys/qr-code-styling" target="_blank">QR Code Styling Library</a>
+            </div>
+        </footer>
+    </div>
+    
+    <div class="mascot" id="mascot">
+        <i class="fas fa-robot"></i>
+    </div>
+    
+    <div class="toast" id="toast">QR Code Generated Successfully!</div>
+
+    <script>
+        // Initialize QR Code Styling
+        const qrCode = new QRCodeStyling({
+            width: 250,
+            height: 250,
+            type: "svg",
+            data: "https://example.com",
+            dotsOptions: {
+                color: "#000000",
+                type: "square"
+            },
+            backgroundOptions: {
+                color: "#ffffff",
+            },
+            imageOptions: {
+                crossOrigin: "anonymous",
+                margin: 10
+            }
+        });
+        
+        // DOM Elements
+        const qrContent = document.getElementById('qr-content');
+        const dotStyle = document.getElementById('dot-style');
+        const colorOptions = document.querySelectorAll('.color-option');
+        const templates = document.querySelectorAll('.template');
+        const downloadPng = document.getElementById('download-png');
+        const downloadSvg = document.getElementById('download-svg');
+        const shareLink = document.getElementById('share-link');
+        const logoUpload = document.getElementById('logo-upload');
+        const bgUpload = document.getElementById('bg-upload');
+        const mascot = document.getElementById('mascot');
+        const contentError = document.getElementById('content-error');
+        const toast = document.getElementById('toast');
+        const loading = document.querySelector('.loading');
+        const qrContainer = document.getElementById('qr-code');
+        const themeToggle = document.getElementById('theme-toggle');
+        const previewContainer = document.getElementById('preview-container');
+        const bgOptions = document.querySelectorAll('.bg-option');
+        
+        // Current state
+        let currentColor = '#000000';
+        let currentTemplate = 'minimal';
+        let currentLogo = null;
+        let currentBg = 'gradient-1';
+        let isDarkMode = false;
+        
+        // Initialize QR Code
+        qrCode.append(qrContainer);
+        
+        // Event Listeners
+        qrContent.addEventListener('input', debounce(updateQRCode, 500));
+        dotStyle.addEventListener('change', updateQRCode);
+        downloadPng.addEventListener('click', () => {
+            showLoading();
+            setTimeout(() => {
+                qrCode.download({ extension: "png" });
+                hideLoading();
+                showToast("PNG Downloaded!");
+            }, 500);
+        });
+        downloadSvg.addEventListener('click', () => {
+            showLoading();
+            setTimeout(() => {
+                qrCode.download({ extension: "svg" });
+                hideLoading();
+                showToast("SVG Downloaded!");
+            }, 500);
+        });
+        shareLink.addEventListener('click', shareQRCode);
+        logoUpload.addEventListener('change', handleLogoUpload);
+        bgUpload.addEventListener('change', handleBgUpload);
+        themeToggle.addEventListener('click', toggleTheme);
+        
+        // Color options
+        colorOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                colorOptions.forEach(opt => opt.classList.remove('active'));
+                option.classList.add('active');
+                currentColor = option.getAttribute('data-color');
+                updateQRCode();
+            });
+        });
+        
+        // Background options
+        bgOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                bgOptions.forEach(opt => opt.classList.remove('active'));
+                option.classList.add('active');
+                currentBg = option.getAttribute('data-bg');
+                updateBackground();
+            });
+        });
+        
+        // Templates
+        templates.forEach(template => {
+            template.addEventListener('click', () => {
+                templates.forEach(t => t.classList.remove('active'));
+                template.classList.add('active');
+                currentTemplate = template.getAttribute('data-template');
+                applyTemplate();
+                updateQRCode();
+            });
+        });
+        
+        // Mascot interaction
+        mascot.addEventListener('click', () => {
+            showToast("Hello! I'm here to help you create amazing QR codes!");
+        });
+        
+        // Functions
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+        
+        function validateContent(content) {
+            if (!content) {
+                contentError.style.display = 'block';
+                return false;
+            }
+            
+            contentError.style.display = 'none';
+            return true;
+        }
+        
+        function updateQRCode() {
+            const content = qrContent.value.trim();
+            
+            if (!validateContent(content)) return;
+            
+            showLoading();
+            
+            setTimeout(() => {
+                const options = {
+                    data: content,
+                    dotsOptions: {
+                        color: currentColor,
+                        type: dotStyle.value
+                    }
+                };
+                
+                qrCode.update(options);
+                hideLoading();
+                showToast("QR Code Updated!");
+            }, 300);
+        }
+        
+        function updateBackground() {
+            const gradients = {
+                'gradient-1': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                'gradient-2': 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                'gradient-3': 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                'gradient-4': 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+                'gradient-5': 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+                'gradient-6': 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)'
+            };
+            
+            previewContainer.style.backgroundImage = gradients[currentBg] || 'none';
+        }
+        
+        function applyTemplate() {
+            switch(currentTemplate) {
+                case 'minimal':
+                    dotStyle.value = 'square';
+                    currentColor = '#000000';
+                    break;
+                case 'gradient':
+                    dotStyle.value = 'rounded';
+                    currentColor = '#4a6cf7';
+                    break;
+                case 'logo':
+                    dotStyle.value = 'square';
+                    currentColor = '#000000';
+                    break;
+                case 'creative':
+                    dotStyle.value = 'classy';
+                    currentColor = '#dc3545';
+                    break;
+            }
+            
+            // Update UI to reflect template changes
+            colorOptions.forEach(option => {
+                if (option.getAttribute('data-color') === currentColor) {
+                    option.classList.add('active');
+                } else {
+                    option.classList.remove('active');
+                }
+            });
+        }
+        
+        function handleLogoUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                if (file.size > 5 * 1024 * 1024) {
+                    showToast("File is too large! Please select a file under 5MB.");
+                    return;
+                }
+                
+                showLoading();
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentLogo = e.target.result;
+                    qrCode.update({
+                        image: currentLogo
+                    });
+                    setTimeout(() => {
+                        hideLoading();
+                        showToast("Logo Added Successfully!");
+                    }, 500);
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        function handleBgUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                if (file.size > 5 * 1024 * 1024) {
+                    showToast("File is too large! Please select a file under 5MB.");
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewContainer.style.backgroundImage = `url(${e.target.result})`;
+                    // Deactivate gradient options when using custom background
+                    bgOptions.forEach(opt => opt.classList.remove('active'));
+                    showToast("Background Updated!");
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        function shareQRCode() {
+            const content = qrContent.value.trim();
+            if (!validateContent(content)) return;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'My QR Code',
+                    text: 'Check out this QR code I created!',
+                    url: content,
+                })
+                .then(() => showToast("QR Code Shared!"))
+                .catch((error) => showToast("Sharing failed: " + error));
+            } else {
+                showToast("Web Share API not supported in your browser");
+            }
+        }
+        
+        function toggleTheme() {
+            isDarkMode = !isDarkMode;
+            document.body.classList.toggle('dark-mode', isDarkMode);
+            document.body.classList.toggle('light-mode', !isDarkMode);
+            localStorage.setItem('darkMode', isDarkMode);
+            showToast(isDarkMode ? "Dark Mode Enabled" : "Light Mode Enabled");
+        }
+        
+        function showToast(message) {
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+        
+        function showLoading() {
+            loading.style.display = 'block';
+            qrContainer.style.display = 'none';
+        }
+        
+        function hideLoading() {
+            loading.style.display = 'none';
+            qrContainer.style.display = 'block';
+        }
+        
+        // Initialize
+        applyTemplate();
+        updateQRCode();
+        updateBackground();
+        
+        // Check for saved theme preference
+        if (localStorage.getItem('darkMode') === 'true') {
+            toggleTheme();
+        }
+        
+        // Add drag and drop functionality for file upload
+        const fileUploadLabels = document.querySelectorAll('.file-upload-label');
+        
+        fileUploadLabels.forEach(label => {
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                label.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                label.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                label.addEventListener(eventName, unhighlight, false);
+            });
+            
+            label.addEventListener('drop', handleDrop, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        function highlight(e) {
+            e.currentTarget.style.borderColor = 'var(--primary)';
+            e.currentTarget.style.backgroundColor = 'rgba(74, 108, 247, 0.1)';
+        }
+        
+        function unhighlight(e) {
+            e.currentTarget.style.borderColor = 'var(--border)';
+            e.currentTarget.style.backgroundColor = '';
+        }
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            const label = e.currentTarget;
+            const input = label.nextElementSibling;
+            
+            if (input) {
+                input.files = files;
+                if (input.id === 'logo-upload') {
+                    handleLogoUpload({ target: { files: files } });
+                } else if (input.id === 'bg-upload') {
+                    handleBgUpload({ target: { files: files } });
+                }
+            }
+        }
+    </script>
+</body>
+</html>
